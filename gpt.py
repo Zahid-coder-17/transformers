@@ -5,7 +5,9 @@ from normalization.rms_norm import RMSNorm
 from normalization.layernorm import LayerNorm
 from position.sinusodal import SinusoidalPositionalEncoding
 from position.learnedpe import LearnedPositionalEncoding
-
+from data.download import dataset
+from tokenization.character import get_batch,decode,vocab_size
+import torch.nn.functional as F
 
 class GPT(nn.Module):
     def __init__(self,vocab_size,d_model,num_heads,hidden_dim,num_layers,attention_type,normalization_type,feedforward_type,position_encoding,max_seq_len=4096,num_kv_heads=None):
@@ -61,3 +63,45 @@ class GPT(nn.Module):
         x = self.norm(x)
         logits = self.lm_head(x)
         return logits
+    
+
+class BigramLanguageModel(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.token_embedding_table = nn.Embedding(vocab_size,vocab_size)
+    def forward(self,idx,targets = None):
+        logits = self.token_embedding_table(idx)
+        loss = None
+        if targets is not None:
+            B,T,C = logits.shape
+            logits = logits.view(B * T, C)
+            targets = targets.view(B * T)
+            loss = F.cross_entropy(logits,targets)
+            return logits,loss
+        return logits, loss
+
+    def generate(self,idx,max_new_tokens):
+        for _ in range(max_new_tokens):
+            logits, loss = self(idx)
+            logits = logits[:,-1,:]
+            probs = F.softmax(logits,dim=-1)
+            idx_next = torch.multinomial(probs,num_samples=1)
+            idx = torch.cat((idx,idx_next),dim=1)
+        return idx
+
+        
+if __name__ == "__main__":
+    xb, yb = get_batch("train")
+    model = BigramLanguageModel()
+    logits, loss = model(xb, yb)
+    
+    print("Logits shape:", logits.shape)
+    print("Loss:", loss)
+    
+    idx = torch.zeros((1,1),dtype=torch.long)
+    generated_text = model.generate(idx,100)
+    print(decode(generated_text[0].tolist()))
+
+
+
+    

@@ -95,3 +95,23 @@ print("Output Logits Shape:", logits.shape)  # Expected: [2, 16, 128000]
 - **Attention Masking** ([`utils/mask.py`](file:///C:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/utils/mask.py)) — Causal triangular masking and sequence padding utilities.
 - **Transformer Block** ([`transformer.py`](file:///C:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/transformer.py)) — Plug-and-play block assembling attention, normalization, and feedforward components.
 - **GPT Assembly** ([`gpt.py`](file:///C:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/gpt.py)) — Top-level model module connecting embeddings, positional encoding, stacked transformer blocks, final norm, and language model head.
+
+---
+
+## 📊 Model Training & Performance Visualization
+
+Here is the empirical training performance curve of the Character-level Bigram Language Model trained on the **TinyStories** dataset for **5,000 iterations**:
+
+![Bigram Training Loss Curve](assets/loss_curve.png)
+
+### 📈 Training Metrics Summary
+
+| Metric | Value |
+| :--- | :--- |
+| **Dataset** | TinyStories (`roneneldan/TinyStories`) |
+| **Total Iterations** | 5,000 |
+| **Initial Loss** | `~4.98` |
+| **Final Loss** | `~2.36` |
+| **Optimizer** | `AdamW` (learning rate = `1e-3`) |
+| **Loss Function** | Cross-Entropy Loss |
+

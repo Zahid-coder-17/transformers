@@ -1,8 +1,26 @@
+# Python Bytecode & Caches
 __pycache__/
 *.py[cod]
 *$py.class
 .pytest_cache/
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+
+# IDE & Editor Configurations
 .vscode/
 .idea/
-data/input.txt
+*.swp
+
+# Model Checkpoints & Data Artifacts
 checkpoints/
+*.pth
+*.pt
+*.bin
+data/input.txt
+
+# Generated Outputs & Temporary Files
+.py

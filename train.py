@@ -2,24 +2,39 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-from gpt import BigramLanguageModel
+from gpt import GPT
 from data.download import dataset
 from tokenization.character import get_batch, decode, vocab_size
-
-
 import os
 import matplotlib.pyplot as plt
 
-model = BigramLanguageModel()
-optimizer = optim.AdamW(model.parameters(), lr=1e-3)
+device = torch.device( "cuda" if torch.cuda.is_available() else "cpu"
+)
+print(f"Using device: {device}")
+model = GPT(
+    vocab_size=vocab_size,
+        d_model=512,
+        num_heads=8,
+        hidden_dim=2048,
+        num_layers=4,
+        attention_type="mha",
+        normalization_type="rms",
+        feedforward_type="swiglu",
+        position_encoding="sinusoidal"
+).to(device)
+
+optimizer = torch.optim.AdamW(model.parameters(), lr=3e-4)
 max_iter = 5000
 
 losses = []
 
-print("Starting Bigram Model Training...")
+print("Starting GPT Model Training...")
 for epoch in range(max_iter):  
     xb, yb = get_batch("train")
-    optimizer.zero_grad()
+    xb = xb.to(device)
+    yb = yb.to(device)
+    
+    optimizer.zero_grad(set_to_none=True)
     logits, loss = model(xb, yb)
     loss.backward()
     optimizer.step()
@@ -29,6 +44,13 @@ for epoch in range(max_iter):
     
     if epoch % 500 == 0 or epoch == max_iter - 1:
         print(f"Epoch {epoch:4d} | Loss: {loss_val:.4f}")
+        
+
+os.makedirs("checkpoints",exist_ok=True)       
+torch.save(
+    model.state_dict(),
+    "checkpoints/gpt_character.pth"
+)
 
 # Save loss visualization curve
 os.makedirs("assets", exist_ok=True)

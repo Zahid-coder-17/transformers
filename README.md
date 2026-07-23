@@ -115,3 +115,118 @@ Here is the empirical training performance curve of the Character-level Bigram L
 | **Optimizer** | `AdamW` (learning rate = `1e-3`) |
 | **Loss Function** | Cross-Entropy Loss |
 
+---
+
+## ⚡ Interactive Gradio Web Application (`app.py`)
+
+A full-featured **Gradio Web Interface** is available to test, benchmark, and visualize all 13 modular transformer architecture presets in real time!
+
+![Visual Performance Dashboard](assets/performance_dashboard.png)
+
+### 🚀 Running the Web App
+
+```bash
+python app.py
+```
+Open **`http://localhost:7860`** in your browser to access:
+
+- **🚀 Live Playground & Text Generation**: Switch between 13 presets, configure pluggable attention/FFN/norm modules, adjust temperature ($0.1–2.0$), Top-$K$, and Top-$P$ nucleus sampling.
+- **🔍 Model Inspector & PyTorch Module Tree**: Inspect full PyTorch sub-module hierarchies, dimension mappings, and parameter counts ($M$).
+- **📊 Performance & Analytics Dashboard**: View training loss distributions, perplexity curves, and next-token prediction accuracy.
+- **ℹ️ Recruiter & Architecture Showcase Guide**: Quick-start guide detailing project architecture pluggability.
+
+---
+
+## 📈 Quantitative Evaluation & Benchmark Results (16.9M Parameter GPT)
+
+Evaluating the 4-layer 16.90 Million parameter GPT model trained on TinyStories:
+
+| Metric Category | Metric Name | Value / Status | Description |
+| :--- | :--- | :---: | :--- |
+| **Loss** | Train Cross-Entropy Loss | `0.5954` | Training batch average |
+| | Validation Cross-Entropy Loss | `0.7215` | Validation batch average |
+| **Perplexity ($PPL$)** | Train Perplexity ($e^{\text{loss}}$) | `1.81` | Lower indicates higher model certainty |
+| | Validation Perplexity | `2.06` | Out-of-sample token perplexity |
+| **Accuracy** | Next-Token Character Accuracy | `77.65%` | Correct next-token predictions |
+| **Throughput** | Inference Throughput | `133.58 tokens/sec` | Benchmarked on CUDA GPU |
+| | Per-Token Latency | `7.49 ms/token` | Fast real-time generation |
+
+---
+
+## ✍️ LLM Text Generation & Sampling (`generate.py`)
+
+Generate text continuations from trained model checkpoints using temperature, Top-$K$, and Top-$P$ sampling:
+
+```bash
+# Basic Text Generation
+python generate.py --prompt "Once upon a time"
+
+# Advanced Sampling Parameters
+python generate.py --prompt "Lily found a secret door" --temp 0.8 --top_k 40 --top_p 0.9 --max_tokens 300
+```
+
+### 📝 Generated Text Sample
+
+> **Prompt**: *"Once upon a time, in a small forest"*  
+> **Output**: *Once upon a time, in a small forest, there lived a little girl named Lily. She loved to draw and color with her marker. One day, she wanted to draw a picture of a flower. She thought it would be a good idea to put a smile on her friend's face...*
+
+---
+
+## 🧪 Testing & Evaluation Scripts
+
+```bash
+# 1. Run Architectural Tensor Shape Assertions
+python test.py
+
+# 2. Run Comprehensive Model Evaluation & Generate Visual Dashboard
+python eval_and_visualize.py
+
+# 3. Train GPT Model from Scratch
+python train.py
+```
+
+---
+
+## 📁 Repository Structure
+
+```
+transformers/
+├── assets/
+│   ├── loss_curve.png            # Loss visualization graphic
+│   └── performance_dashboard.png # Multi-panel evaluation dashboard
+├── attention/
+│   ├── gqa.py                    # Grouped-Query Attention (Mistral/LLaMA-3)
+│   ├── mha.py                    # Multi-Head Attention (Standard)
+│   ├── mqa.py                    # Multi-Query Attention (Falcon/PaLM)
+│   └── self_attention.py         # Single-Head Self Attention
+├── checkpoints/
+│   └── gpt_character.pth         # Pre-trained 16.9M model weights
+├── data/
+│   ├── download.py               # TinyStories dataset downloader
+│   └── input.txt                 # Tokenized training corpus text
+├── feedforward/
+│   ├── geglu.py                  # GELU-Gated Linear Unit (GPT-2/BERT)
+│   └── swiglu.py                 # Swish-Gated Linear Unit (LLaMA/Mistral)
+├── normalization/
+│   ├── layernorm.py              # Standard Layer Normalization
+│   └── rms_norm.py               # Root Mean Square Normalization
+├── position/
+│   ├── alibi.py                  # Attention with Linear Biases
+│   ├── learnedpe.py              # Learned Positional Embedding
+│   ├── rope.py                   # Rotary Position Embedding
+│   └── sinusodal.py              # Fixed Sinusoidal Positional Encoding
+├── tokenization/
+│   └── character.py              # Character-level tokenizer & batcher
+├── utils/
+│   ├── kv_cache.py               # Autoregressive Key-Value Cache
+│   └── mask.py                   # Causal & padding attention masking
+├── app.py                        # Interactive Gradio Web App (13 Presets)
+├── eval_and_visualize.py         # Evaluation & performance dashboard script
+├── generate.py                   # CLI text generation with sampling
+├── gpt.py                        # Top-level GPT model definition
+├── test.py                       # Forward-pass assertion test script
+├── train.py                      # Training loop implementation
+└── transformer.py                # Plug-and-play TransformerBlock module
+```
+
+

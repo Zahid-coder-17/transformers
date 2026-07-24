@@ -1,68 +1,123 @@
 import os
-import urllib.request
+import sys
 from datasets import load_dataset
 
-
-def download_arabic_dataset():
-    print("Downloading Arabic Dataset...")
-    urls = [
-        "https://raw.githubusercontent.com/1B-Arabic-Words/arabic-text-corpus/master/arabic_corpus.txt",
-        "https://raw.githubusercontent.com/tashkeel/arabic-corpus/master/corpus.txt"
-    ]
-    downloaded = False
-    for url in urls:
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
-            with urllib.request.urlopen(req, timeout=10) as resp:
-                text = resp.read().decode("utf-8")
-                if len(text) > 2000:
-                    with open("data/arabic_input.txt", "w", encoding="utf-8") as f:
-                        f.write(text)
-                    print(f"Successfully downloaded Arabic corpus! Size: {len(text):,} characters ({len(text.encode('utf-8')):,} bytes)")
-                    downloaded = True
-                    break
-        except Exception:
-            continue
-
-    if not downloaded:
-        try:
-            ds = load_dataset("arabic_billion_words", split="train", streaming=True)
-            text_data = []
-            for i, item in enumerate(ds):
-                if i >= 500:
-                    break
-                if "text" in item:
-                    text_data.append(item["text"])
-            if text_data:
-                full_text = "\n\n".join(text_data)
-                with open("data/arabic_input.txt", "w", encoding="utf-8") as f:
-                    f.write(full_text)
-                print(f"Successfully downloaded HF Arabic billion words! Size: {len(full_text):,} characters")
-        except Exception as e:
-            print(f"Preserving rich local Arabic corpus: {e}")
+TARGET_BYTES = 8 * 1024 * 1024  # 8 MB
 
 
-def download_code_dataset():
-    print("Downloading Python Code Dataset from Hugging Face...")
+def download_code(target_bytes=TARGET_BYTES):
+    print(f"[Code] Target: {target_bytes / 1e6:.1f} MB", flush=True)
+    print("[Code] Loading flytech/python-codes-25k ...", flush=True)
+
+    chunks = []
+    total  = 0
+
     try:
-        ds = load_dataset("flytech/python-codes-25k", split="train")
-        text_data = []
-        for i, item in enumerate(ds):
-            if i >= 1500:
+        ds = load_dataset("flytech/python-codes-25k", split="train", streaming=True)
+        for item in ds:
+            text = item.get("output") or item.get("code") or item.get("text") or ""
+            if not text.strip():
+                continue
+            encoded = text.encode("utf-8")
+            chunks.append(text)
+            total += len(encoded)
+            if total % (512 * 1024) < len(encoded):
+                print(f"  [Code] {total / 1e6:.2f} MB collected ...", flush=True)
+            if total >= target_bytes:
                 break
-            if "code" in item and item["code"]:
-                text_data.append(item["code"])
-            elif "text" in item and item["text"]:
-                text_data.append(item["text"])
-
-        full_code = "\n\n".join(text_data)
-        with open("data/code_input.txt", "w", encoding="utf-8") as f:
-            f.write(full_code)
-        print(f"Successfully downloaded Python Code dataset! Size: {len(full_code):,} characters ({len(full_code.encode('utf-8')):,} bytes)")
     except Exception as e:
-        print(f"Code dataset load failed: {e}.")
+        print(f"  [Code] flytech failed: {e}", flush=True)
+
+    if total < target_bytes:
+        print("[Code] Supplementing with codeparrot/github-code (Python) ...", flush=True)
+        try:
+            ds2 = load_dataset(
+                "codeparrot/github-code",
+                streaming=True,
+                split="train",
+            )
+            for item in ds2:
+                if item.get("language", "") != "Python":
+                    continue
+                text = item.get("code", "")
+                if not text.strip():
+                    continue
+                encoded = text.encode("utf-8")
+                chunks.append(text)
+                total += len(encoded)
+                if total % (512 * 1024) < len(encoded):
+                    print(f"  [Code] {total / 1e6:.2f} MB collected ...", flush=True)
+                if total >= target_bytes:
+                    break
+        except Exception as e:
+            print(f"  [Code] codeparrot fallback failed: {e}", flush=True)
+
+    full_text = "\n\n".join(chunks)
+    actual    = len(full_text.encode("utf-8"))
+    os.makedirs("data", exist_ok=True)
+    with open("data/code_input.txt", "w", encoding="utf-8") as f:
+        f.write(full_text)
+    print(f"[Code] Saved -> data/code_input.txt  ({actual / 1e6:.2f} MB)\n", flush=True)
+
+
+def download_arabic(target_bytes=TARGET_BYTES):
+    print(f"[Arabic] Target: {target_bytes / 1e6:.1f} MB", flush=True)
+
+    chunks = []
+    total  = 0
+
+    print("[Arabic] Loading wikimedia/wikipedia ar ...", flush=True)
+    try:
+        ds = load_dataset(
+            "wikimedia/wikipedia",
+            "20231101.ar",
+            split="train",
+            streaming=True,
+        )
+        for item in ds:
+            text = item.get("text", "")
+            if not text.strip():
+                continue
+            encoded = text.encode("utf-8")
+            chunks.append(text)
+            total += len(encoded)
+            if total % (512 * 1024) < len(encoded):
+                print(f"  [Arabic] {total / 1e6:.2f} MB collected ...", flush=True)
+            if total >= target_bytes:
+                break
+    except Exception as e:
+        print(f"  [Arabic] Wikipedia failed: {e}", flush=True)
+
+    if total < target_bytes:
+        print("[Arabic] Supplementing with cc100 ar ...", flush=True)
+        try:
+            ds2 = load_dataset("cc100", lang="ar", split="train", streaming=True)
+            for item in ds2:
+                text = item.get("text", "")
+                if not text.strip():
+                    continue
+                encoded = text.encode("utf-8")
+                chunks.append(text)
+                total += len(encoded)
+                if total % (512 * 1024) < len(encoded):
+                    print(f"  [Arabic] {total / 1e6:.2f} MB collected ...", flush=True)
+                if total >= target_bytes:
+                    break
+        except Exception as e:
+            print(f"  [Arabic] cc100 fallback failed: {e}", flush=True)
+
+    full_text = "\n\n".join(chunks)
+    actual    = len(full_text.encode("utf-8"))
+    os.makedirs("data", exist_ok=True)
+    with open("data/arabic_input.txt", "w", encoding="utf-8") as f:
+        f.write(full_text)
+    print(f"[Arabic] Saved -> data/arabic_input.txt  ({actual / 1e6:.2f} MB)\n", flush=True)
 
 
 if __name__ == "__main__":
-    download_arabic_dataset()
-    download_code_dataset()
+    print("=" * 55)
+    print("  Multi-Corpus Dataset Downloader  (8 MB per corpus)")
+    print("=" * 55)
+    download_code()
+    download_arabic()
+    print("All done. Run train_multicorpus_ddp.py when ready.")

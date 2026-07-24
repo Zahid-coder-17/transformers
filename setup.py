@@ -7,13 +7,16 @@ setup(
     author="Zahid",
     url="https://github.com/Zahid-coder-17/transformers",
     packages=find_packages(),
+    py_modules=["gpt", "transformer"],
     install_requires=[
         "torch>=2.0.0",
+        "huggingface_hub",
         "matplotlib",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
         "License :: OSI Approved :: MIT License",
+        "Operating System :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
     python_requires=">=3.8",

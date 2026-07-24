@@ -8,6 +8,13 @@ import math
 import re
 import numpy as np
 
+try:
+    import spaces
+    gpu_decorator = spaces.GPU
+except Exception:
+    def gpu_decorator(func):
+        return func
+
 from gpt import GPT, BigramLanguageModel
 from tokenization.character import vocab_size as char_vocab_size, decode as char_decode, encode as char_encode
 from tokenization.bpe import BPETokenizer, WordPieceTokenizer, SentencePieceTokenizer
@@ -369,6 +376,7 @@ def load_or_create_model(preset_name, attention_type, position_encoding, feedfor
     return model, f"GPT-Custom ({attention_type.upper()} + {feedforward_type.upper()})", param_m, loaded_checkpoint
 
 
+@gpu_decorator
 def generate_from_architecture(
     preset_name,
     prompt,
@@ -442,6 +450,7 @@ def generate_from_architecture(
     return generated_text, metrics_summary, arch_details
 
 
+@gpu_decorator
 def generate_multicorpus_demo(prompt, max_tokens, temperature, top_k, top_p):
     if not prompt or len(prompt.strip()) == 0:
         prompt = "Once upon a time"

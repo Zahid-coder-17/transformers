@@ -15,6 +15,15 @@ A comprehensive PyTorch implementation of modular Transformer components, attent
    - **Feed-Forward Networks**: SwiGLU (LLaMA/Mistral) and GEGLU (GPT-2/BERT).
    - **Normalization Layers**: RMSNorm and LayerNorm.
 
+2. **`zahidgpt` Python Library**:
+   - Easily importable Python package (`pip install git+https://github.com/Zahid-coder-17/transformers`) for text generation and fine-tuning.
+
+3. **FastAPI REST API Server**:
+   - Production REST API endpoint (`python api_server.py`) serving `/generate` and `/health` for app integrations.
+
+4. **Hugging Face Hub Model Repository**:
+   - Pre-trained 17.45M parameter DDP multi-corpus model hosted live at [`Zahid2005/modular-gpt-multicorpus`](https://huggingface.co/Zahid2005/modular-gpt-multicorpus).
+
 2. **Subword Tokenizer Engine (From Scratch & Integrated)**:
    - **Character Tokenizer**: Fine-grained byte/character representation.
    - **Standard BPE Tokenizer**: Byte Pair Encoding built from scratch.

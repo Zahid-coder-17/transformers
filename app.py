@@ -442,6 +442,37 @@ def generate_from_architecture(
     return generated_text, metrics_summary, arch_details
 
 
+def generate_multicorpus_demo(prompt, max_tokens, temperature, top_k, top_p):
+    if not prompt or len(prompt.strip()) == 0:
+        prompt = "Once upon a time"
+    
+    from zahidgpt import generate as zahid_gen
+    
+    start_time = time.time()
+    generated_text = zahid_gen(
+        prompt=prompt,
+        model_type="multicorpus",
+        max_new_tokens=int(max_tokens),
+        temperature=float(temperature),
+        top_k=int(top_k),
+        top_p=float(top_p)
+    )
+    elapsed = time.time() - start_time
+    gen_tokens = int(max_tokens)
+    throughput = gen_tokens / elapsed if elapsed > 0 else 0
+    latency = (elapsed / gen_tokens) * 1000 if gen_tokens > 0 else 0
+
+    metrics_summary = (
+        f"**Model Name**: `ZahidGPT Multi-Corpus (17.45M DDP)`\n"
+        f"**Supported Domains**: English, Arabic, Python Code\n"
+        f"**Checkpoint**: `checkpoints/gpt_multicorpus.pth`\n"
+        f"**Compute Device**: `{device.type.upper()}`\n"
+        f"**Latency**: `{latency:.2f} ms/token`\n"
+        f"**Throughput**: `{throughput:.2f} tokens/sec` (`{elapsed:.2f}s` total)"
+    )
+    return generated_text, metrics_summary
+
+
 def apply_preset(preset_name):
     if preset_name not in PRESETS:
         return "Select a preset...", "mha", "sinusoidal", "swiglu", "rms", 512, 8, 2048, 4, 4, True
@@ -724,8 +755,38 @@ with gr.Blocks(title="Transformer Architecture & Tokenizer Playground") as demo:
     """)
 
     with gr.Tabs():
-        
-        with gr.TabItem("🚀 Live Playground & Text Generation"):
+
+        with gr.TabItem("🌍 Multi-Corpus LLM (English, Arabic & Code)"):
+            gr.Markdown("### 🤖 17.45M DDP Multi-Corpus Model Generator")
+            gr.Markdown("Generate text using the **17.45M parameter** model trained with DDP & balanced sampling across **English**, **Arabic**, and **Python Code**.")
+            with gr.Row():
+                with gr.Column(scale=5):
+                    mc_prompt = gr.Textbox(
+                        lines=4,
+                        value="def fibonacci(",
+                        label="Prompt Text (English, Arabic, or Python Code)",
+                        placeholder="e.g., Once upon a time / def train_model( / مرحبا"
+                    )
+                    with gr.Row():
+                        mc_max_tokens = gr.Slider(minimum=20, maximum=500, step=20, value=200, label="Max Tokens")
+                        mc_temp = gr.Slider(minimum=0.1, maximum=2.0, step=0.05, value=0.8, label="Temperature")
+                    with gr.Row():
+                        mc_top_k = gr.Slider(minimum=1, maximum=100, step=1, value=40, label="Top-K")
+                        mc_top_p = gr.Slider(minimum=0.1, maximum=1.0, step=0.05, value=0.9, label="Top-P (Nucleus)")
+                    
+                    mc_btn = gr.Button("🔥 Generate Multilingual / Code Output", variant="primary", size="lg")
+                
+                with gr.Column(scale=7):
+                    mc_output = gr.Textbox(lines=10, label="Generated Output", elem_classes=["output-box"])
+                    mc_metrics = gr.Markdown(label="Inference Metrics")
+
+            mc_btn.click(
+                fn=generate_multicorpus_demo,
+                inputs=[mc_prompt, mc_max_tokens, mc_temp, mc_top_k, mc_top_p],
+                outputs=[mc_output, mc_metrics]
+            )
+
+        with gr.TabItem("🚀 Architecture Playground & Custom GPT"):
             with gr.Row():
                 with gr.Column(scale=5):
                     gr.Markdown("### 🛠️ Architecture Configuration & Plugins")
@@ -916,37 +977,48 @@ with gr.Blocks(title="Transformer Architecture & Tokenizer Playground") as demo:
             gr.Markdown("### 📈 LLM Performance & Training Loss Analytics")
             
             with gr.Row():
-                gr.Markdown("""
-                **Quantitative Model Evaluation (TinyStories Dataset)**
-                - **Train Loss**: `0.5954`
-                - **Validation Loss**: `0.7215`
-                - **Train Perplexity**: `1.81`
-                - **Val Perplexity**: `2.06`
-                - **Next-Token Character Accuracy**: `77.65%`
-                - **Inference Latency**: `7.49 ms/token` (133.58 tokens/sec on CUDA)
-                """)
+                with gr.Column():
+                    gr.Markdown("""
+                    ### 🌍 17.45M DDP Multi-Corpus Model (English, Arabic, Code)
+                    - **Training Method**: PyTorch DistributedDataParallel (DDP) + Balanced Sampling
+                    - **Total Training Steps**: `15,000 steps` (102.7 minutes)
+                    - **Starting Loss**: `6.6492` → **Final Loss**: `0.6495` (**90.2% Loss Reduction**)
+                    - **Vocabulary Size**: `628` characters (Multilingual + Code)
+                    - **Dataset Split**: `1/3 English` (TinyStories), `1/3 Arabic` (Wikipedia), `1/3 Python Code`
+                    """)
+                with gr.Column():
+                    gr.Markdown("""
+                    ### 🇬🇧 2.15M Character Baseline Model (TinyStories)
+                    - **Train Loss**: `0.5954`
+                    - **Validation Loss**: `0.7215`
+                    - **Validation Perplexity**: `2.06`
+                    - **Next-Token Accuracy**: `77.65%`
+                    - **Inference Latency**: `4.44 ms/token`
+                    """)
             
-            if os.path.exists("assets/performance_dashboard.png"):
+            if os.path.exists("assets/multicorpus_ddp_loss_curve.png"):
+                gr.Image("assets/multicorpus_ddp_loss_curve.png", label="Multi-Corpus DDP Training Loss Curve (15,000 Steps)", show_label=True)
+            elif os.path.exists("assets/performance_dashboard.png"):
                 gr.Image("assets/performance_dashboard.png", label="Visual Performance Analytics Dashboard", show_label=True)
-            elif os.path.exists("assets/loss_curve.png"):
-                gr.Image("assets/loss_curve.png", label="Training Loss Curve", show_label=True)
 
 
-        with gr.TabItem("ℹ️ Recruiter & Architecture Guide"):
+        with gr.TabItem("ℹ️ Recruiter & API / Deployment Guide"):
             gr.Markdown("""
-            # 🎯 Project Overview: Modular Transformer & LLM Engine
+            # 🎯 Project Overview & Deployment Ecosystem
             
-            Welcome to the **Modular Transformer Architecture Playground**! This codebase provides a clean, PyTorch-native, highly modular implementation of modern Large Language Model (LLM) architectures and tokenizers across English, Arabic, and Source Code Corpora.
+            This repository provides a modular, production-ready implementation of Large Language Models (LLMs), tokenizers, distributed training (DDP), API hosting, and PyTorch deployment.
             
-            ### 🌟 Key Technical Highlights:
-            1. **13 Pluggable Architectures**: MHA, GQA, MQA, SwiGLU, GEGLU, RMSNorm, LayerNorm, RoPE, ALiBi, Sinusoidal, Learned.
-            2. **7 Tokenizer Algorithms**: Character, Standard BPE, WordPiece, SentencePiece, Byte-Level BPE, Regex BPE, GPT Tokenizer.
-            3. **Multi-Domain Corpora**: Dedicated tokenizers & GPT benchmarking for English text, Arabic text, and Source Code (Python).
-            4. **Trained Model (16.9M Parameters)**: Trained on TinyStories achieving **77.65% accuracy** and **2.06 perplexity**.
+            ### 🌟 Ecosystem Highlights:
+            1. **Hugging Face Hub Integration**: Model hosted live on Hugging Face Hub at [`Zahid2005/modular-gpt-multicorpus`](https://huggingface.co/Zahid2005/modular-gpt-multicorpus).
+            2. **`zahidgpt` Python Library**: Installable pip package (`pip install git+https://github.com/Zahid-coder-17/transformers`) for inference in any Python app.
+            3. **FastAPI REST Server**: Production REST API (`python api_server.py`) offering `/generate` & `/health` endpoints.
+            4. **17.45M DDP Multi-Corpus LLM**: Trained with DistributedDataParallel and Balanced Sampling across English, Arabic, and Python Code.
+            5. **13 Pluggable Architectures & 7 Tokenizer Algorithms**: Interactive playground for architectural experimentation (MHA, GQA, MQA, RoPE, ALiBi, SwiGLU, RMSNorm).
             
             ---
-            *Built with PyTorch, Gradio, and Matplotlib.*
+            *Built with PyTorch, Gradio, FastAPI, and Hugging Face Hub.*
             """)
 
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860, share=False, theme=theme, css=custom_css)
+

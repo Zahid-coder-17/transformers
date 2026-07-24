@@ -13,10 +13,10 @@ print(f"Executing evaluation on device: {device}", flush=True)
 
 model = GPT(
     vocab_size=vocab_size,
-    d_model=256,
-    num_heads=4,
-    hidden_dim=1024,
-    num_layers=2,
+    d_model=512,
+    num_heads=8,
+    hidden_dim=2048,
+    num_layers=4,
     attention_type="mha",
     normalization_type="rms",
     feedforward_type="swiglu",
@@ -156,8 +156,8 @@ summary_text = (
     "  -------------------------------------\n"
     f"  • Architecture      : Decoder-Only GPT\n"
     f"  • Model Parameters  : {num_params/1e6:.2f} Million ({num_params:,})\n"
-    f"  • Embedding Dim     : 256 | Heads: 4 | Layers: 2\n"
-    f"  • FeedForward Dim   : 1024 (SwiGLU)\n"
+    f"  • Embedding Dim     : 512 | Heads: 8 | Layers: 4\n"
+    f"  • FeedForward Dim   : 2048 (SwiGLU)\n"
     f"  • Normalization     : RMSNorm\n"
     f"  • Positional Enc.   : Sinusoidal\n"
     "  -------------------------------------\n"

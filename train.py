@@ -15,8 +15,8 @@ if device.type == "cuda":
 
 train_data_gpu = train_data.to(device)
 val_data_gpu = val_data.to(device)
-batch_size = 32
-block_size = 128
+batch_size = 64
+block_size = 256
 offsets_gpu = torch.arange(block_size, device=device).unsqueeze(0)
 
 def fast_get_batch(split):
@@ -30,23 +30,23 @@ def fast_get_batch(split):
 
 model = GPT(
     vocab_size=vocab_size,
-    d_model=256,
-    num_heads=4,
-    hidden_dim=1024,
-    num_layers=2,
+    d_model=512,
+    num_heads=8,
+    hidden_dim=2048,
+    num_layers=4,
     attention_type="mha",
     normalization_type="rms",
     feedforward_type="swiglu",
     position_encoding="sinusoidal"
 ).to(device)
 
-optimizer = torch.optim.AdamW(model.parameters(), lr=1e-3)
+optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
 scaler = torch.amp.GradScaler('cuda', enabled=(device.type == "cuda"))
-max_iter = 2000
+max_iter = 10000
 
 losses = []
 
-print("Starting Fast Modular Transformer Training for 2000 Epochs...", flush=True)
+print("Starting Full Modular Transformer Training for 10000 Epochs...", flush=True)
 model.train()
 for epoch in range(max_iter):
     xb, yb = fast_get_batch("train")
@@ -62,8 +62,8 @@ for epoch in range(max_iter):
     loss_val = loss.item()
     losses.append(loss_val)
 
-    if epoch % 200 == 0 or epoch == max_iter - 1:
-        print(f"Epoch {epoch:4d} / {max_iter} | Loss: {loss_val:.4f}", flush=True)
+    if epoch % 1000 == 0 or epoch == max_iter - 1:
+        print(f"Epoch {epoch:4d} / {max_iter} | Cross-Entropy Loss: {loss_val:.4f}", flush=True)
 
 os.makedirs("checkpoints", exist_ok=True)
 torch.save(model.state_dict(), "checkpoints/gpt_character.pth")
@@ -80,7 +80,7 @@ window_size = 50
 moving_avg = [sum(losses[max(0, i-window_size):i+1])/len(losses[max(0, i-window_size):i+1]) for i in range(len(losses))]
 plt.plot(epochs, moving_avg, color="#61DAFB", linewidth=2.5, label="Moving Average (Window=50)")
 
-plt.title("Modular Transformer Training Loss Curve (2000 Epochs)", fontsize=14, fontweight="bold", pad=15, color="white")
+plt.title("Modular Transformer Training Loss Curve (10000 Epochs)", fontsize=14, fontweight="bold", pad=15, color="white")
 plt.xlabel("Training Iteration / Epoch", fontsize=12, labelpad=10)
 plt.ylabel("Cross-Entropy Loss", fontsize=12, labelpad=10)
 plt.grid(True, linestyle="--", alpha=0.3)
@@ -88,11 +88,11 @@ plt.legend(frameon=True, facecolor="#1E1E1E", edgecolor="none")
 
 initial_loss = losses[0]
 final_loss = losses[-1]
-plt.annotate(f"Start: {initial_loss:.2f}", xy=(0, initial_loss), xytext=(150, initial_loss + 0.3),
+plt.annotate(f"Start: {initial_loss:.2f}", xy=(0, initial_loss), xytext=(500, initial_loss + 0.3),
              arrowprops=dict(facecolor="#FF6B6B", shrink=0.05, width=1.5, headwidth=8),
              fontsize=10, fontweight="bold", color="#FF6B6B")
 
-plt.annotate(f"Final: {final_loss:.2f}", xy=(max_iter-1, final_loss), xytext=(max_iter-500, final_loss + 0.8),
+plt.annotate(f"Final: {final_loss:.2f}", xy=(max_iter-1, final_loss), xytext=(max_iter-2500, final_loss + 0.8),
              arrowprops=dict(facecolor="#4EBD40", shrink=0.05, width=1.5, headwidth=8),
              fontsize=10, fontweight="bold", color="#4EBD40")
 
@@ -105,5 +105,5 @@ print(f"Saved training plot to {plot_path}", flush=True)
 print("\n--- Trained Transformer Text Generation Sample ---", flush=True)
 model.eval()
 ctx = torch.zeros((1, 1), dtype=torch.long, device=device)
-generated_text = decode(model.generate(ctx, 150)[0].tolist())
+generated_text = decode(model.generate(ctx, 200)[0].tolist())
 print(generated_text, flush=True)

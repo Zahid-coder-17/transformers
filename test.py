@@ -5,6 +5,10 @@ import torch.nn.functional as F
 
 from gpt import GPT, BigramLanguageModel
 from tokenization.character import vocab_size
+from tokenization.bpe import BPETokenizer, WordPieceTokenizer
+from tokenization.byte_bpe import ByteBPETokenizer
+from tokenization.regex_bpe import RegexBPETokenizer
+from tokenization.gpt_tokenizer import GPTTokenizer
 from attention.mha import MultiHeadAttention
 from attention.gqa import GroupedQueryAttention
 from attention.mqa import MultiQueryAttention
@@ -15,8 +19,6 @@ from feedforward.geglu import GEGLU
 
 
 class TestCausalMasking(unittest.TestCase):
-    """Verify that causal attention masks strictly prevent future tokens from influencing past outputs."""
-
     def test_causal_mask_invariance(self):
         device = torch.device("cpu")
         model = GPT(
@@ -32,23 +34,19 @@ class TestCausalMasking(unittest.TestCase):
         ).to(device)
         model.eval()
 
-        # Construct two sequence inputs identical up to sequence position T-1, differing only at position T
         seq_len = 8
         x1 = torch.tensor([[10, 20, 30, 40, 50, 60, 70, 80]], dtype=torch.long)
-        x2 = torch.tensor([[10, 20, 30, 40, 50, 60, 70, 85]], dtype=torch.long)  # last token changed (85 < vocab_size)
+        x2 = torch.tensor([[10, 20, 30, 40, 50, 60, 70, 85]], dtype=torch.long)
 
         with torch.no_grad():
             logits1, _ = model(x1)
             logits2, _ = model(x2)
 
-        # Logits at positions 0 to seq_len-2 MUST be identical
         diff = torch.abs(logits1[:, :-1, :] - logits2[:, :-1, :]).max().item()
-        self.assertAlmostEqual(diff, 0.0, places=5, msg=f"Causal mask failed: future token change leaked to past logits (diff={diff}).")
+        self.assertAlmostEqual(diff, 0.0, places=5)
 
 
 class TestAttentionVariants(unittest.TestCase):
-    """Verify Attention mechanisms (MHA, GQA, MQA) and KV Head group configurations."""
-
     def setUp(self):
         self.d_model = 128
         self.num_heads = 8
@@ -74,8 +72,6 @@ class TestAttentionVariants(unittest.TestCase):
 
 
 class TestNormalizationAndFFN(unittest.TestCase):
-    """Test Normalization layers and Feed-Forward Networks."""
-
     def setUp(self):
         self.d_model = 128
         self.hidden_dim = 512
@@ -104,9 +100,42 @@ class TestNormalizationAndFFN(unittest.TestCase):
         self.assertEqual(out.shape, self.x.shape)
 
 
-class Test13ArchitecturePresets(unittest.TestCase):
-    """Test full model construction and forward passes across all 13 architecture presets."""
+class TestSubwordTokenizers(unittest.TestCase):
+    def setUp(self):
+        self.sample_text = "Once upon a time in a small forest, there was a tiny frog who loved to sing."
 
+    def test_bpe_tokenizer(self):
+        tok = BPETokenizer(vocab_size=128)
+        tok.fit(self.sample_text)
+        encoded = tok.encode("small forest")
+        self.assertTrue(len(encoded) > 0)
+
+    def test_wordpiece_tokenizer(self):
+        tok = WordPieceTokenizer(vocab_size=128)
+        tok.fit(self.sample_text)
+        encoded = tok.encode("small forest")
+        self.assertTrue(len(encoded) > 0)
+
+    def test_byte_bpe_tokenizer(self):
+        tok = ByteBPETokenizer(vocab_size=128)
+        tok.fit(self.sample_text)
+        encoded = tok.encode("small forest")
+        self.assertTrue(len(encoded) > 0)
+
+    def test_regex_bpe_tokenizer(self):
+        tok = RegexBPETokenizer(vocab_size=128)
+        tok.fit(self.sample_text)
+        encoded = tok.encode("small forest")
+        self.assertTrue(len(encoded) > 0)
+
+    def test_gpt_tokenizer(self):
+        tok = GPTTokenizer(vocab_size=128)
+        tok.fit(self.sample_text)
+        encoded = tok.encode("small forest <|endoftext|>")
+        self.assertTrue(len(encoded) > 0)
+
+
+class Test13ArchitecturePresets(unittest.TestCase):
     def setUp(self):
         self.input_ids = torch.randint(0, vocab_size, (2, 16))
         self.targets = torch.randint(0, vocab_size, (2, 16))

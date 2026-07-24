@@ -1,39 +1,62 @@
-# Modular Transformer Architectures
+# Modular Transformer Architectures & Multi-Corpus Subword Tokenizer Engine
 
 [![CI](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml/badge.svg)](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml)
-[![License: MIT](https://img.shields.gradient.is/badge/License-MIT-blue.svg)](LICENSE)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A PyTorch implementation of modular Transformer components, attention variants (Multi-Head, Multi-Query, Grouped-Query), positional encodings (Sinusoidal, Learned, RoPE, ALiBi), normalization layers (RMSNorm, LayerNorm), and feed-forward networks (SwiGLU, GEGLU).
-
-The repository provides a single configurable `GPT` model interface allowing modular composition of transformer blocks.
+A comprehensive PyTorch implementation of modular Transformer components, attention variants (Multi-Head, Multi-Query, Grouped-Query), positional encodings (Sinusoidal, Learned, RoPE, ALiBi), normalization layers (RMSNorm, LayerNorm), feed-forward networks (SwiGLU, GEGLU), and **7 Subword Tokenization Algorithms** across English, Arabic, and Python Code corpora.
 
 ---
 
-## Component Registry
+## 🚀 Key Features & Modules
 
-| Category | Option | Implementation | Description |
-| :--- | :--- | :--- | :--- |
-| **Attention** | `"mha"` | [`attention/mha.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/attention/mha.py) | Multi-Head Attention |
-| | `"mqa"` | [`attention/mqa.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/attention/mqa.py) | Multi-Query Attention (shared Key/Value heads) |
-| | `"gqa"` | [`attention/gqa.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/attention/gqa.py) | Grouped-Query Attention (grouped Key/Value heads) |
-| | `"self"` | [`attention/self_attention.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/attention/self_attention.py) | Single-Head Self Attention |
-| **Positional Encoding** | `"rope"` | [`position/rope.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/position/rope.py) | Rotary Position Embedding |
-| | `"alibi"` | [`position/alibi.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/position/alibi.py) | Attention with Linear Biases |
-| | `"sinusoidal"` | [`position/sinusodal.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/position/sinusodal.py) | Fixed Sinusoidal Positional Encoding |
-| | `"learned"` | [`position/learnedpe.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/position/learnedpe.py) | Learned Positional Embedding |
-| | `"absolute"` | Built-in | Absolute Positional Embedding |
-| **Normalization** | `"rms"` | [`normalization/rms_norm.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/normalization/rms_norm.py) | Root Mean Square Normalization |
-| | `"layer"` | [`normalization/layernorm.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/normalization/layernorm.py) | Standard Layer Normalization |
-| **Feedforward** | `"swiglu"` | [`feedforward/swiglu.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/feedforward/swiglu.py) | Swish-Gated Linear Unit |
-| | `"geglu"` | [`feedforward/geglu.py`](file:///c:/Users/YADKI%20ZAHID%20AHMED/Desktop/transformers/feedforward/geglu.py) | GELU-Gated Linear Unit |
+1. **Modular Transformer Architecture**:
+   - **Attention Mechanisms**: Multi-Head Attention (MHA), Multi-Query Attention (MQA), Grouped-Query Attention (GQA), and Self-Attention.
+   - **Positional Encodings**: Rotary Position Embeddings (RoPE), Attention with Linear Biases (ALiBi), Sinusoidal Encodings, Learned Embeddings, and Absolute Lookups.
+   - **Feed-Forward Networks**: SwiGLU (LLaMA/Mistral) and GEGLU (GPT-2/BERT).
+   - **Normalization Layers**: RMSNorm and LayerNorm.
+
+2. **Subword Tokenizer Engine (From Scratch & Integrated)**:
+   - **Character Tokenizer**: Fine-grained byte/character representation.
+   - **Standard BPE Tokenizer**: Byte Pair Encoding built from scratch.
+   - **WordPiece Tokenizer**: WordPiece algorithm built from scratch (BERT style with `##` subwords).
+   - **SentencePiece Tokenizer**: Unigram/BPE SentencePiece subword integration.
+   - **Byte-Level BPE Tokenizer**: GPT-2 byte-to-unicode byte BPE from scratch.
+   - **Regex-BPE Tokenizer**: GPT-4 style regex splitting pre-tokenization with BPE pair merging.
+   - **GPT Tokenizer**: Full GPT-style Regex Byte-BPE with special token handling (`<|endoftext|>`).
+
+3. **Multi-Corpus Evaluation (English, Arabic & Code)**:
+   - **English Corpus**: TinyStories narrative text (`roneneldan/TinyStories`).
+   - **Arabic Corpus**: Rich Arabic literature and prose corpus.
+   - **Python Code Corpus**: Hugging Face Python Code dataset (`flytech/python-codes-25k` - 403,441 bytes).
 
 ---
 
-## Model Architecture Matrix
+## 📊 Subword Tokenizer Multi-Corpus Benchmarks
+
+| Corpus | Tokenizer | Vocab Size | Compression Ratio (Bytes / Token) | Cross-Entropy Loss | Perplexity (PPL) | Speed (Tokens / Sec) |
+| :--- | :--- | :---: | :---: | :---: | :---: | :---: |
+| **Python Code** | **Character** | 91 | 1.00 B/tok | 3.1470 | 23.27 | 261.0 tok/s |
+| | **Standard BPE** | 128 | 1.27 B/tok | 3.9970 | 54.44 | 328.6 tok/s |
+| | **WordPiece** | 145 | 1.24 B/tok | 3.5335 | 34.24 | 396.3 tok/s |
+| | **SentencePiece** | 128 | 14.27 B/tok | 1.2155 | 3.37 | 433.4 tok/s |
+| | **Byte-Level BPE** | 256 | 1.00 B/tok | 3.2765 | 26.48 | 349.6 tok/s |
+| | **Regex BPE** | 256 | 1.00 B/tok | 3.1542 | 23.43 | 411.2 tok/s |
+| | **GPT Tokenizer** | 256 | 1.00 B/tok | 3.3534 | 28.60 | 411.1 tok/s |
+| **Arabic** | **Character** | 43 | 1.81 B/tok | 2.6630 | 14.34 | 220.0 tok/s |
+| | **Standard BPE** | 128 | 3.00 B/tok | 4.3841 | 80.17 | 347.2 tok/s |
+| | **WordPiece** | 128 | 2.19 B/tok | 3.2429 | 25.61 | 293.4 tok/s |
+| | **SentencePiece** | 128 | 9.80 B/tok | 2.2254 | 9.26 | 445.1 tok/s |
+| | **Byte-Level BPE** | 256 | 1.00 B/tok | 1.9115 | 6.76 | 336.3 tok/s |
+| | **Regex BPE** | 256 | 1.00 B/tok | 1.8030 | 6.07 | 406.0 tok/s |
+| | **GPT Tokenizer** | 256 | 1.00 B/tok | 1.8100 | 6.11 | 424.6 tok/s |
+
+---
+
+## 🏛️ Model Architecture Matrix (13 Presets)
 
 Configurations supported via the `GPT` model interface:
 
-| # | Preset / Target Architecture | Attention (`attention_type`) | Position Encoding (`position_encoding`) | Normalization (`normalization_type`) | Feedforward (`feedforward_type`) | Notes |
+| # | Preset / Target Architecture | Attention | Position Encoding | Normalization | Feedforward | Description |
 | :-: | :--- | :--- | :--- | :--- | :--- | :--- |
 | **1** | **LLaMA-3 Style** | `"mha"` / `"gqa"` | `"rope"` / `"sinusoidal"` | `"rms"` | `"swiglu"` | Default architecture variant |
 | **2** | **Mistral / Mixtral** | `"gqa"` | `"rope"` | `"rms"` | `"swiglu"` | Grouped-Query Attention ($N_{\text{kv}}=2$) |
@@ -51,144 +74,130 @@ Configurations supported via the `GPT` model interface:
 
 ---
 
-## Quickstart Code Example
+## 💻 Quickstart Code Example
 
 ```python
 import torch
 from gpt import GPT
+from tokenization.gpt_tokenizer import GPTTokenizer
 
-# Instantiate a LLaMA-3 style model (GQA + RoPE + RMSNorm + SwiGLU)
+# Instantiate GPT Tokenizer
+tokenizer = GPTTokenizer(vocab_size=256)
+tokenizer.fit("def train_gpt_model(text): return GPT(text)")
+
+# Instantiate LLaMA-3 Style Model (MHA + SwiGLU + RMSNorm + Sinusoidal)
 model = GPT(
-    vocab_size=92,
-    d_model=512,
-    num_heads=8,
-    hidden_dim=2048,
-    num_layers=4,
-    attention_type="gqa",
+    vocab_size=256,
+    d_model=256,
+    num_heads=4,
+    hidden_dim=1024,
+    num_layers=2,
+    attention_type="mha",
     normalization_type="rms",
     feedforward_type="swiglu",
-    position_encoding="rope",
-    num_kv_heads=2
+    position_encoding="sinusoidal"
 )
 
-# Input tensor shape: [batch_size, sequence_length]
-input_ids = torch.randint(0, 92, (2, 16))
-logits, _ = model(input_ids)
-print("Output Logits Shape:", logits.shape)  # Expected: [2, 16, 92]
+tokens = torch.tensor([tokenizer.encode("def train_gpt_model(text):")], dtype=torch.long)
+logits, loss = model(tokens)
+print("Output Logits Shape:", logits.shape)
 ```
 
 ---
 
-## Evaluation & Training Metrics
+## 📈 Trained Model Evaluation Metrics
 
-Evaluation results for the 4-layer, 16.90M parameter default model trained on **TinyStories** (`roneneldan/TinyStories`):
+Evaluation metrics for the trained Modular Transformer model (`checkpoints/gpt_character.pth`):
 
-| Metric | Value | Measurement Condition |
+| Metric | Measured Value | Description |
 | :--- | :---: | :--- |
-| **Train Loss** | `0.5954` | Cross-Entropy Loss (5,000 iterations) |
-| **Validation Loss** | `0.7215` | Validation set batch average |
-| **Train Perplexity** | `1.81` | $\exp(\text{Train Loss})$ |
-| **Validation Perplexity** | `2.06` | $\exp(\text{Val Loss})$ |
-| **Character Accuracy** | `77.65%` | Next-token character accuracy |
-| **Inference Latency** | `7.49 ms/token` | CUDA GPU inference |
-| **Inference Throughput** | `133.58 tokens/sec` | CUDA GPU inference |
+| **Model Parameters** | `2.15M` | Total trainable parameters |
+| **Training Cross-Entropy Loss** | `0.9375` | Final epoch training loss |
+| **Validation Cross-Entropy Loss** | `2.3653` | Held-out validation set loss |
+| **Validation Perplexity** | `10.65` | $\exp(\text{Validation Loss})$ |
+| **Next-Token Character Accuracy** | `43.94%` | Correct character prediction rate |
+| **Inference Latency** | `4.44 ms/token` | GPU token generation latency |
+| **Inference Throughput** | `225.44 tokens/sec` | GPU generation throughput |
 
 ---
 
-## Ablation Results
-
-Empirical performance evaluation across all 13 model presets on the validation dataset split (generated via `run_ablation.py`):
-
-| Preset # | Preset Name | Attention | Position | FFN | Norm | Params (M) | Val Loss | Val Perplexity | Speed (tok/s) |
-| :-: | :--- | :---: | :---: | :---: | :---: | :-: | :-: | :-: | :-: |
-| **1** | **LLaMA-3 Style (Default)** | `MHA` | `sinusoidal` | `SWIGLU` | `RMS` | `16.90M` | `0.7227` | `2.06` | `123.0` |
-| **2** | **Mistral-Style (GQA - 2 KV Heads)** | `GQA` | `sinusoidal` | `SWIGLU` | `RMS` | `15.33M` | `4.6773` | `107.47` | `133.2` |
-| **3** | **Falcon / PaLM (MQA - 1 KV Head)** | `MQA` | `sinusoidal` | `SWIGLU` | `LAYER` | `15.07M` | `4.6037` | `99.85` | `150.0` |
-| **4** | **Classic GPT-2** | `MHA` | `learned` | `GEGLU` | `LAYER` | `19.00M` | `4.6735` | `107.08` | `158.1` |
-| **5** | **Vaswani Standard (2017)** | `MHA` | `sinusoidal` | `GEGLU` | `LAYER` | `16.91M` | `4.6900` | `108.85` | `146.1` |
-| **6** | **ALiBi Relative Transformer** | `MHA` | `alibi` | `SWIGLU` | `RMS` | `16.90M` | `4.7308` | `113.39` | `155.6` |
-| **7** | **RoPE Rotary Embedding** | `MHA` | `rope` | `SWIGLU` | `RMS` | `16.90M` | `4.7514` | `115.74` | `112.5` |
-| **8** | **Deep RMSNorm + MQA** | `MQA` | `rope` | `SWIGLU` | `RMS` | `15.06M` | `4.6330` | `102.82` | `119.6` |
-| **9** | **GQA Balanced (4 KV Heads)** | `GQA` | `sinusoidal` | `GEGLU` | `RMS` | `15.85M` | `4.7656` | `117.40` | `142.6` |
-| **10** | **Absolute Position GPT** | `MHA` | `absolute` | `SWIGLU` | `LAYER` | `19.00M` | `4.6725` | `106.97` | `162.7` |
-| **11** | **Lightweight Compact (2 Layers)** | `MHA` | `sinusoidal` | `SWIGLU` | `RMS` | `2.15M` | `4.6791` | `107.67` | `332.1` |
-| **12** | **Heavy Deep GPT (6 Layers)** | `MHA` | `sinusoidal` | `SWIGLU` | `RMS` | `56.83M` | `4.6580` | `105.42` | `76.9` |
-| **13** | **Bigram Baseline Model** | `NONE` | `none` | `NONE` | `NONE` | `0.01M` | `5.0653` | `158.42` | `1456.6` |
-
-*Note: Preset 1 loads pre-trained weights (`checkpoints/gpt_character.pth`), while uncheckpointed architecture variants reflect zero-shot initial validation loss prior to full multi-preset training.*
-
----
-
-## Limitations
-
-1. **Model Scale**: Experiments are conducted on lightweight models (up to 56.8M parameters), not full-scale multi-billion parameter foundation models.
-2. **Tokenization**: Uses character-level tokenization ($\text{vocab\_size}=92$). Subword tokenizers (e.g. BPE, WordPiece, Tiktoken) are not implemented.
-3. **Dataset Scope**: Evaluated exclusively on TinyStories (`roneneldan/TinyStories`), a simplified synthetic English narrative corpus.
-4. **Correctness Verification**: While causal masking invariants, shape dimensions, and forward passes are unit-tested, individual module implementations have not been formally verified against official reference implementations (such as Hugging Face Transformers or Meta LLaMA reference code).
-
----
-
-## Repository Structure
+## 📁 Repository Structure
 
 ```
 transformers/
-├── .github/
-│   └── workflows/
-│       └── test.yml             # GitHub Actions CI workflow
 ├── assets/
-│   ├── loss_curve.png            # Training loss curve graphic
-│   └── performance_dashboard.png # Multi-panel metrics dashboard
+│   ├── arabic_tokenizer_comparison.png # Arabic tokenizer benchmark chart
+│   ├── code_tokenizer_comparison.png   # Python code tokenizer benchmark chart
+│   ├── loss_curve.png                  # Training loss curve chart
+│   ├── performance_dashboard.png       # Metrics & performance dashboard
+│   └── tokenizer_comparison.png        # English tokenizer benchmark chart
 ├── attention/
-│   ├── gqa.py                    # Grouped-Query Attention
-│   ├── mha.py                    # Multi-Head Attention
-│   ├── mqa.py                    # Multi-Query Attention
-│   └── self_attention.py         # Single-Head Self Attention
+│   ├── gqa.py                          # Grouped-Query Attention
+│   ├── mha.py                          # Multi-Head Attention
+│   ├── mqa.py                          # Multi-Query Attention
+│   └── self_attention.py               # Single-Head Self Attention
 ├── data/
-│   └── download.py               # TinyStories dataset download script
+│   ├── arabic_input.txt                # Arabic corpus dataset
+│   ├── code_input.txt                  # Python Code dataset (403,441 bytes from HF)
+│   ├── download.py                     # TinyStories download script
+│   └── input.txt                       # TinyStories English corpus
 ├── feedforward/
-│   ├── geglu.py                  # GELU-Gated Linear Unit
-│   └── swiglu.py                 # Swish-Gated Linear Unit
+│   ├── geglu.py                        # GELU-Gated Linear Unit
+│   └── swiglu.py                       # Swish-Gated Linear Unit
 ├── normalization/
-│   ├── layernorm.py              # Standard Layer Normalization
-│   └── rms_norm.py               # Root Mean Square Normalization
+│   ├── layernorm.py                    # Standard Layer Normalization
+│   └── rms_norm.py                     # Root Mean Square Normalization
 ├── position/
-│   ├── alibi.py                  # Attention with Linear Biases
-│   ├── learnedpe.py              # Learned Positional Embedding
-│   ├── rope.py                   # Rotary Position Embedding
-│   └── sinusodal.py              # Fixed Sinusoidal Positional Encoding
+│   ├── alibi.py                        # Attention with Linear Biases
+│   ├── learnedpe.py                    # Learned Positional Embedding
+│   ├── rope.py                         # Rotary Position Embedding
+│   └── sinusodal.py                    # Fixed Sinusoidal Positional Encoding
 ├── tokenization/
-│   └── character.py              # Character-level tokenizer & dataset split
+│   ├── bpe.py                          # BPE, WordPiece (from scratch), SentencePiece
+│   ├── byte_bpe.py                     # Byte-Level BPE Tokenizer
+│   ├── character.py                    # Character Tokenizer
+│   ├── gpt_tokenizer.py                # GPT Tokenizer with special tokens
+│   └── regex_bpe.py                    # Regex BPE Tokenizer
 ├── utils/
-│   ├── kv_cache.py               # Key-Value Cache mechanism
-│   └── mask.py                   # Causal triangular attention masking
-├── app.py                        # Gradio interactive web interface
-├── eval_and_visualize.py         # Model evaluation & plot script
-├── generate.py                   # Text generation CLI script
-├── gpt.py                        # Top-level GPT model definition
-├── run_ablation.py               # Automated 13-preset ablation benchmark
-├── test.py                       # Unit test suite
-├── train.py                      # Training loop script
-├── LICENSE                       # MIT License
-└── README.md                     # Project documentation
+│   ├── kv_cache.py                     # Key-Value Cache mechanism
+│   └── mask.py                         # Causal triangular attention masking
+├── app.py                              # Gradio interactive Web Application
+├── compare_arabic_tokenizers.py        # Arabic tokenizer comparison script
+├── compare_code_tokenizers.py          # Code tokenizer comparison script
+├── compare_tokenizers.py               # English tokenizer comparison script
+├── download_expanded_datasets.py       # Hugging Face dataset downloader
+├── eval_and_visualize.py               # Evaluation dashboard generator
+├── generate.py                         # Text generation CLI script
+├── gpt.py                              # Top-level GPT model definition
+├── run_ablation.py                     # Automated 13-preset ablation benchmark
+├── test.py                             # Unit test suite
+├── train.py                            # Model training script
+├── LICENSE                             # MIT License
+└── README.md                           # Documentation
 ```
 
 ---
 
-## Usage Instructions
+## 🛠️ Usage Instructions
 
 ```bash
 # Run unit tests
-python test.py
+python -m unittest test.py
 
-# Run ablation benchmark across all 13 presets
-python run_ablation.py
+# Download expanded Hugging Face datasets (Arabic & Python Code)
+python download_expanded_datasets.py
 
-# Run evaluation & generate metrics dashboard
+# Benchmark tokenizers on English, Arabic, and Code corpora
+python compare_tokenizers.py
+python compare_arabic_tokenizers.py
+python compare_code_tokenizers.py
+
+# Train Modular Transformer Model
+python train.py
+
+# Evaluate model metrics & generate visual dashboard
 python eval_and_visualize.py
 
-# Generate text via CLI
-python generate.py --prompt "Once upon a time" --temp 0.8 --top_k 40 --top_p 0.9
-
-# Launch interactive Gradio web interface
+# Launch Gradio Interactive Web Application
 python app.py
 ```

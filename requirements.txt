@@ -1,5 +1,3 @@
-torch>=2.0.0
-gradio>=4.0.0
 matplotlib
 numpy
 sentencepiece

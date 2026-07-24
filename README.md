@@ -124,6 +124,72 @@ print("Output Logits Shape:", logits.shape)
 
 ---
 
+## 🛠️ Open-Source API & Fine-Tuning Guide
+
+The `zahidgpt` library provides complete open-source APIs for **Inference**, **Fine-Tuning**, **Custom Tokenization**, and **Hugging Face Hub Integration**.
+
+```bash
+pip install git+https://github.com/Zahid-coder-17/transformers
+```
+
+### 1. Zero-Setup Inference
+```python
+from zahidgpt import generate
+
+# Generates text using 17.45M parameter pre-trained weights (auto-downloaded from HF Hub)
+print(generate("def fibonacci(", model_type="multicorpus"))
+print(generate("Once upon a time", model_type="multicorpus"))
+print(generate("مرحبا بك", model_type="multicorpus"))
+```
+
+### 2. Fine-Tune on Your Custom Text Dataset
+```python
+from zahidgpt import finetune
+
+my_dataset = "def custom_function(): return 'Hello World'\n" * 100
+
+# Fine-tune pre-trained model on your dataset in 1 line
+model, losses = finetune(
+    text_data=my_dataset,
+    model_type="multicorpus",
+    epochs=10,
+    save_path="my_finetuned_model.pth"
+)
+```
+
+### 3. Build Custom Transformer Architectures
+```python
+from zahidgpt import GPT, TransformerBlock, GPTTokenizer
+
+# Custom 6-layer GQA SwiGLU RoPE transformer
+custom_model = GPT(
+    vocab_size=512,
+    d_model=512,
+    num_heads=8,
+    hidden_dim=2048,
+    num_layers=6,
+    attention_type="gqa",
+    position_encoding="rope",
+    normalization_type="rms",
+    feedforward_type="swiglu",
+    num_kv_heads=2
+)
+```
+
+### 4. Push & Share Models on Hugging Face Hub
+```python
+from zahidgpt import push_to_hub, load_from_hub
+
+# Push fine-tuned model weights to Hugging Face
+push_to_hub(repo_id="username/my-custom-gpt", checkpoint_path="my_finetuned_model.pth")
+
+# Load model weights from any Hugging Face Hub repository
+weight_path = load_from_hub(repo_id="Zahid2005/modular-gpt-multicorpus", filename="gpt_multicorpus.pth")
+```
+
+
+---
+
 ## 📈 Trained Model Evaluation Metrics
 
 Evaluation metrics for the trained Modular Transformer model (`checkpoints/gpt_character.pth`):

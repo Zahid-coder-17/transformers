@@ -1,5 +1,12 @@
 import os
+import sys
 import math
+import time
+
+# Force UTF-8 stdout so Arabic characters print on Windows without crashing
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+
 import torch
 import torch.distributed as dist
 import torch.multiprocessing as mp
@@ -11,19 +18,20 @@ from gpt import GPT
 
 
 def setup_ddp(rank, world_size):
+    if world_size == 1:
+        return
     os.environ.setdefault("MASTER_ADDR", "localhost")
     os.environ.setdefault("MASTER_PORT", "29500")
-    dist.init_process_group(
-        backend="nccl" if torch.cuda.is_available() else "gloo",
-        rank=rank,
-        world_size=world_size,
-    )
+    # NCCL is Linux-only; use gloo on Windows
+    backend = "gloo" if os.name == "nt" else ("nccl" if torch.cuda.is_available() else "gloo")
+    dist.init_process_group(backend=backend, rank=rank, world_size=world_size)
     if torch.cuda.is_available():
         torch.cuda.set_device(rank)
 
 
-def cleanup_ddp():
-    dist.destroy_process_group()
+def cleanup_ddp(world_size):
+    if world_size > 1:
+        dist.destroy_process_group()
 
 
 def is_main(rank):
@@ -85,8 +93,9 @@ def train(rank, world_size):
     device = torch.device(f"cuda:{rank}" if torch.cuda.is_available() else "cpu")
 
     if is_main(rank):
+        backend = "gloo" if os.name == "nt" else ("nccl" if torch.cuda.is_available() else "gloo")
         print(f"[DDP] World size : {world_size} process(es)", flush=True)
-        print(f"[DDP] Backend    : {'nccl' if torch.cuda.is_available() else 'gloo'}", flush=True)
+        print(f"[DDP] Backend    : {backend if world_size > 1 else 'none (single process)'}", flush=True)
 
     corpora, stoi, itos, vocab_size = load_corpora()
 
@@ -130,7 +139,7 @@ def train(rank, world_size):
         print(f"\nModel parameters : {n_params:,} ({n_params / 1e6:.2f}M)", flush=True)
         print(f"Effective batch  : {batch_size * world_size} ({batch_size} x {world_size} GPU(s))\n", flush=True)
 
-    max_iter     = 10_000
+    max_iter     = 15_000
     warmup_steps = 200
     max_lr       = 5e-4
     min_lr       = 1e-5
@@ -139,6 +148,8 @@ def train(rank, world_size):
     scaler    = torch.amp.GradScaler("cuda", enabled=torch.cuda.is_available())
 
     losses = []
+
+    t_start = time.time()
 
     if is_main(rank):
         print("Starting DDP Multi-Corpus Training ...", flush=True)
@@ -166,7 +177,19 @@ def train(rank, world_size):
             loss_val = loss.item()
             losses.append(loss_val)
             if step % 1000 == 0 or step == max_iter - 1:
-                print(f"Step {step:5d}/{max_iter}  |  LR: {lr:.6f}  |  Loss: {loss_val:.4f}", flush=True)
+                elapsed = time.time() - t_start
+                print(f"Step {step:5d}/{max_iter}  |  LR: {lr:.6f}  |  Loss: {loss_val:.4f}  |  Elapsed: {elapsed/60:.1f} min", flush=True)
+
+    t_end = time.time()
+    total_secs = t_end - t_start
+
+    if is_main(rank):
+        print(f"\n{'='*55}", flush=True)
+        print(f"  Training complete!", flush=True)
+        print(f"  Total time   : {total_secs/60:.2f} min  ({total_secs:.1f} s)", flush=True)
+        print(f"  Steps/sec    : {max_iter / total_secs:.2f}", flush=True)
+        print(f"  ms/step      : {1000 * total_secs / max_iter:.1f} ms", flush=True)
+        print(f"{'='*55}\n", flush=True)
 
     if is_main(rank):
         os.makedirs("checkpoints", exist_ok=True)
@@ -220,7 +243,7 @@ def train(rank, world_size):
             print(f"\n[Prompt: {repr(prompt)}]")
             print(out.encode("utf-8", errors="replace").decode("utf-8"), flush=True)
 
-    cleanup_ddp()
+    cleanup_ddp(world_size)
 
 
 if __name__ == "__main__":

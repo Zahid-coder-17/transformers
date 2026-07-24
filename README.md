@@ -1,3 +1,14 @@
+---
+title: Modular GPT Playground
+emoji: ⚡
+colorFrom: indigo
+colorTo: blue
+sdk: gradio
+sdk_version: 4.44.0
+app_file: app.py
+pinned: false
+---
+
 # Modular Transformer Architectures & Multi-Corpus Subword Tokenizer Engine
 
 [![CI](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml/badge.svg)](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml)

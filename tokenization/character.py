@@ -1,13 +1,21 @@
+import os
 import torch
 
 d_model = 512
 sequence_length = 256
 
-with open("data/input.txt", "r", encoding="utf-8") as f:
-    text = f.read()
+root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+data_path = os.path.join(root_dir, "data", "input.txt")
+
+if os.path.exists(data_path):
+    with open(data_path, "r", encoding="utf-8") as f:
+        text = f.read()
+else:
+    text = "\n !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~\n"
 
 chars = sorted(list(set(text)))
 vocab_size = len(chars)
+
 
 stoi = {
     character: index

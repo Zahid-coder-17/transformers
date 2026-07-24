@@ -1,13 +1,12 @@
 import torch.nn as nn
 import torch
+import torch.nn.functional as F
 from transformer import TransformerBlock
 from normalization.rms_norm import RMSNorm
 from normalization.layernorm import LayerNorm
 from position.sinusodal import SinusoidalPositionalEncoding
 from position.learnedpe import LearnedPositionalEncoding
-from data.download import dataset
-from tokenization.character import get_batch,decode,vocab_size
-import torch.nn.functional as F
+
 
 class GPT(nn.Module):
     def __init__(self,vocab_size,d_model,num_heads,hidden_dim,num_layers,attention_type,normalization_type,feedforward_type,position_encoding,max_seq_len=4096,num_kv_heads=None,block_size=1024):
@@ -127,6 +126,7 @@ class BigramLanguageModel(nn.Module):
 
         
 if __name__ == "__main__":
+    from tokenization.character import get_batch, decode
     xb, yb = get_batch("train")
     model = BigramLanguageModel()
     logits, loss = model(xb, yb)

@@ -1028,6 +1028,8 @@ with gr.Blocks(title="Transformer Architecture & Tokenizer Playground") as demo:
             *Built with PyTorch, Gradio, FastAPI, and Hugging Face Hub.*
             """)
 
+demo.queue()
 if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860, share=False, theme=theme, css=custom_css)
+
 

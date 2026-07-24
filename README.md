@@ -178,6 +178,123 @@ transformers/
 
 ---
 
+## ⚡ Distributed Training with DDP (DistributedDataParallel)
+
+The project includes a full **PyTorch DDP** training implementation (`train_multicorpus_ddp.py`) that replaces the original single-process `train_multicorpus.py`.
+
+### What is DDP?
+
+`DistributedDataParallel` (DDP) is PyTorch's recommended strategy for scaling model training across multiple GPUs or machines.  Each GPU runs an independent copy of the model (a *replica*) and processes a different slice of the batch.  After every backward pass, DDP uses **ring-AllReduce** to average the gradients across all replicas so every GPU's weights stay in sync.
+
+```
+┌──────────────────────────────────────────────────────────┐
+│               DistributedDataParallel (DDP)              │
+│                                                          │
+│  GPU 0 (rank 0)    GPU 1 (rank 1)    GPU 2 (rank 2)      │
+│  ┌─────────────┐   ┌─────────────┐   ┌─────────────┐    │
+│  │  GPT model  │   │  GPT model  │   │  GPT model  │    │
+│  │  replica 0  │   │  replica 1  │   │  replica 2  │    │
+│  └──────┬──────┘   └──────┬──────┘   └──────┬──────┘    │
+│         │  forward + loss  │                 │           │
+│         ↓                 ↓                 ↓           │
+│  ┌────────────────────────────────────────────────────┐  │
+│  │     AllReduce  (average gradients across GPUs)     │  │
+│  └────────────────────────────────────────────────────┘  │
+│         ↓                 ↓                 ↓           │
+│    optimizer.step    optimizer.step    optimizer.step    │
+│         │                                               │
+│  Checkpoint saved by rank-0 only (no duplicate writes)  │
+└──────────────────────────────────────────────────────────┘
+```
+
+### Key Improvements over `train_multicorpus.py`
+
+| Feature | `train_multicorpus.py` | `train_multicorpus_ddp.py` |
+|:---|:---:|:---:|
+| Multi-GPU support | ❌ | ✅ DDP |
+| Gradient sync | ❌ | ✅ AllReduce |
+| Balanced corpus sampling | ❌ | ✅ Equal 1/3 per language |
+| Duplicate checkpoint writes | ❌ | ✅ Rank-0 only |
+| UTF-8 safe Arabic printing | ❌ | ✅ |
+| Mixed-precision AMP | ✅ | ✅ |
+| Cosine LR warmup | ✅ | ✅ |
+| Gradient clipping | ✅ | ✅ |
+
+### Balanced Corpus Sampling (Critical Fix)
+
+The old script concatenated all corpora and sampled randomly, which means the model saw English ~95% of the time due to the size imbalance:
+
+```
+data/input.txt        →  8,797,812 bytes  (English)
+data/code_input.txt   →    415,332 bytes  (Code)
+data/arabic_input.txt →      7,686 bytes  (Arabic)  ← 1145x smaller than English
+```
+
+The new `BalancedCorpusSampler` keeps each corpus as a **separate tensor** and draws exactly `batch_size / 3` samples from each language per step — regardless of corpus size.
+
+### How to Run
+
+**Single GPU / CPU** (auto-detected):
+```bash
+python train_multicorpus_ddp.py
+```
+
+**Multi-GPU on one machine** (recommended — uses `torchrun`):
+```bash
+torchrun --nproc_per_node=2 train_multicorpus_ddp.py   # 2 GPUs
+torchrun --nproc_per_node=4 train_multicorpus_ddp.py   # 4 GPUs
+```
+
+**Multi-Node** (e.g., 2 machines × 4 GPUs = 8 GPUs total):
+```bash
+# On node 0 (master)
+torchrun --nnodes=2 --nproc_per_node=4 \
+         --node_rank=0 --master_addr=<NODE_0_IP> --master_port=29500 \
+         train_multicorpus_ddp.py
+
+# On node 1 (worker)
+torchrun --nnodes=2 --nproc_per_node=4 \
+         --node_rank=1 --master_addr=<NODE_0_IP> --master_port=29500 \
+         train_multicorpus_ddp.py
+```
+
+### Expected Speedup
+
+| Setup | Effective Batch | Approx. Speedup |
+|:---|:---:|:---:|
+| 1 GPU  (baseline) | 63  | 1× |
+| 2 GPUs | 126 | ~1.8× |
+| 4 GPUs | 252 | ~3.5× |
+| 8 GPUs | 504 | ~6.5× |
+
+> Speedup is sub-linear due to AllReduce communication overhead, which decreases as a fraction of total time as model size grows.
+
+---
+
+## 📊 Dataset Size Requirements
+
+For the model to learn all three languages properly, the corpora need to be **roughly equal in size** and large enough for the model to learn patterns.  Recommended minimum sizes:
+
+| Corpus | Current Size | Recommended Minimum | Good Target |
+|:---|:---:|:---:|:---:|
+| **English** (TinyStories) | 8.7 MB | 8 MB ✅ | 8–20 MB |
+| **Code** (Python) | 415 KB | **5 MB** | 8–15 MB |
+| **Arabic** | 7 KB | **5 MB** | 8–15 MB |
+
+**Arabic** needs the most attention — 7 KB is only ~3,500 words, far too little for a character-level model to learn Arabic morphology.
+
+#### Recommended Arabic Datasets
+- [`wikimedia/wikipedia`](https://huggingface.co/datasets/wikimedia/wikipedia) — `ar` subset (~800 MB, use a slice of 5–10 MB)
+- [`oscar-corpus/OSCAR-2301`](https://huggingface.co/datasets/oscar-corpus/OSCAR-2301) — `ar` subset (very large, sample freely)
+- [`cc100`](https://huggingface.co/datasets/cc100) — `ar` subset (~6 GB, sample 10 MB)
+
+#### Recommended Code Datasets
+- [`flytech/python-codes-25k`](https://huggingface.co/datasets/flytech/python-codes-25k) — already used, expand to full download
+- [`codeparrot/github-code`](https://huggingface.co/datasets/codeparrot/github-code) — filter for Python, sample 10–15 MB
+- [`bigcode/the-stack`](https://huggingface.co/datasets/bigcode/the-stack) — Python subset
+
+---
+
 ## 🛠️ Usage Instructions
 
 ```bash
@@ -192,11 +309,20 @@ python compare_tokenizers.py
 python compare_arabic_tokenizers.py
 python compare_code_tokenizers.py
 
-# Train Modular Transformer Model
+# Train single-GPU model (original)
 python train.py
+
+# Train multi-corpus model with DDP (single GPU / auto-detect)
+python train_multicorpus_ddp.py
+
+# Train multi-corpus model with DDP (multi-GPU via torchrun)
+torchrun --nproc_per_node=<N> train_multicorpus_ddp.py
 
 # Evaluate model metrics & generate visual dashboard
 python eval_and_visualize.py
+
+# Generate text from trained model
+python generate.py --prompt "Once upon a time" --max_tokens 300
 
 # Launch Gradio Interactive Web Application
 python app.py

@@ -44,14 +44,14 @@ def deploy_to_hf():
                     repo_type="model",
                     token=HF_TOKEN,
                 )
-                print(f"    ✔ Successfully uploaded {repo_path}")
+                print(f"    [OK] Successfully uploaded {repo_path}")
             except Exception as e:
-                print(f"    ❌ Error uploading {local_path}: {e}")
+                print(f"    [ERROR] Error uploading {local_path}: {e}")
         else:
-            print(f"    ⚠️ File {local_path} not found locally, skipping.")
+            print(f"    [SKIP] File {local_path} not found locally, skipping.")
 
-    print(f"\n🎉 Deployment completed! Your model is live on Hugging Face Hub at:")
-    print(f"👉 https://huggingface.co/{repo_id}\n")
+    print(f"\nDeployment completed! Your model is live on Hugging Face Hub at:")
+    print(f"https://huggingface.co/{repo_id}\n")
 
 if __name__ == "__main__":
     deploy_to_hf()

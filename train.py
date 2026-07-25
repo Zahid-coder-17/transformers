@@ -42,11 +42,11 @@ model = GPT(
 
 optimizer = torch.optim.AdamW(model.parameters(), lr=5e-4)
 scaler = torch.amp.GradScaler('cuda', enabled=(device.type == "cuda"))
-max_iter = 10000
+max_iter = 15000
 
 losses = []
 
-print("Starting Full Modular Transformer Training for 10000 Epochs...", flush=True)
+print("Starting Full Modular Transformer Training for 15000 Epochs...", flush=True)
 model.train()
 for epoch in range(max_iter):
     xb, yb = fast_get_batch("train")

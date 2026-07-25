@@ -2,7 +2,7 @@ import os
 import torch
 import torch.nn as nn
 from torch.optim import AdamW
-from zahidgpt.model import load_model
+from .model import load_model
 
 def finetune(
     text_data: str,

@@ -1,5 +1,5 @@
 import torch
-from zahidgpt.model import load_model
+from .model import load_model
 
 def encode(text, stoi):
     return [stoi[c] for c in text if c in stoi]

@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="zahidgpt",
-    version="0.1.0",
+    version="0.1.1",
     description="Modular Transformer & Multi-Corpus (English, Arabic, Code) LLM Library",
     long_description=open("README.md", encoding="utf-8").read(),
     long_description_content_type="text/markdown",

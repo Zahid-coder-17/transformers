@@ -2,10 +2,6 @@ import re
 from collections import Counter, defaultdict
 
 class WordPieceTokenizer:
-    """
-    WordPiece Tokenizer implementation (BERT / WordPiece style).
-    Uses '##' subword prefixes for continuation sub-tokens.
-    """
     def __init__(self, vocab_size=256, unk_token="[UNK]", pad_token="[PAD]"):
         self.vocab_size = vocab_size
         self.unk_token = unk_token
@@ -17,7 +13,6 @@ class WordPieceTokenizer:
         words = re.findall(r"\w+|[^\w\s]", text)
         word_counts = Counter(words)
 
-        # Base characters
         chars = set()
         for word in word_counts:
             for i, c in enumerate(word):
@@ -28,7 +23,6 @@ class WordPieceTokenizer:
 
         vocab_list = [self.pad_token, self.unk_token] + sorted(list(chars))
         
-        # Build frequency table for word piece candidates
         subword_counts = Counter()
         for word, count in word_counts.items():
             for i in range(len(word)):

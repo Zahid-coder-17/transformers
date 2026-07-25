@@ -1,5 +1,5 @@
 include README.md
 include LICENSE
 include TUTORIAL.md
-recursive-include zahidgpt *.py *.pth *.txt *.json
-recursive-include checkpoints *.pth
+recursive-include zahidgpt *.py *.txt *.json
+global-exclude *.pth

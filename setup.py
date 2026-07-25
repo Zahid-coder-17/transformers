@@ -11,9 +11,6 @@ setup(
     url="https://github.com/Zahid-coder-17/transformers",
     packages=find_packages(),
     include_package_data=True,
-    package_data={
-        "zahidgpt": ["checkpoints/*", "data/*"],
-    },
     install_requires=[
         "torch>=2.0.0",
         "huggingface_hub",

@@ -1,7 +1,8 @@
 import unittest
 import torch
 import torch.nn as nn
-from lora_qlora_scratch import (
+from zahidgpt import (
+    GPT,
     LoRALinear,
     INT8Quantizer,
     INT8Linear,
@@ -14,7 +15,6 @@ from lora_qlora_scratch import (
     inject_lora_to_model,
     mark_only_lora_as_trainable,
 )
-from gpt import GPT
 
 class TestLoRAandQLoRA(unittest.TestCase):
     def test_lora_linear_forward_and_grad(self):

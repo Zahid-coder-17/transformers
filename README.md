@@ -10,7 +10,7 @@ pinned: false
 
 # Modular Transformer Architectures & Multi-Corpus Subword Tokenizer Engine
 
-[![CI](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml/badge.svg)](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml)
+[![CI](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Zahid-coder-17/transformers/actions/workflows/test.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 A comprehensive PyTorch implementation of modular Transformer components, attention variants (Multi-Head, Multi-Query, Grouped-Query), positional encodings (Sinusoidal, Learned, RoPE, ALiBi), normalization layers (RMSNorm, LayerNorm), feed-forward networks (SwiGLU, GEGLU), and **7 Subword Tokenization Algorithms** across English, Arabic, and Python Code corpora.

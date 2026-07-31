@@ -101,9 +101,10 @@ class GPT(nn.Module):
     
 
 class BigramLanguageModel(nn.Module):
-    def __init__(self):
+    def __init__(self, vocab_size=65):
         super().__init__()
-        self.token_embedding_table = nn.Embedding(vocab_size,vocab_size)
+        self.vocab_size = vocab_size
+        self.token_embedding_table = nn.Embedding(vocab_size, vocab_size)
     def forward(self,idx,targets = None):
         logits = self.token_embedding_table(idx)
         loss = None

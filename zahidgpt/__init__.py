@@ -13,8 +13,23 @@ from .tokenizer import (
     RegexBPETokenizer,
     GPTTokenizer,
 )
+from .lora import (
+    LoRALinear,
+    INT8Quantizer,
+    INT8Linear,
+    INT4Quantizer,
+    BlockwiseINT4Quantizer,
+    PackedINT4Storage,
+    NF4Codebook,
+    NF4Quantizer,
+    DoubleQuantizer,
+    QLoRALinear,
+    inject_lora_to_model,
+    mark_only_lora_as_trainable,
+    train_lora,
+)
 
-__version__ = "0.1.2"
+__version__ = "0.1.3"
 __all__ = [
     "GPT",
     "TransformerBlock",
@@ -33,4 +48,17 @@ __all__ = [
     "ByteBPETokenizer",
     "RegexBPETokenizer",
     "GPTTokenizer",
+    "LoRALinear",
+    "INT8Quantizer",
+    "INT8Linear",
+    "INT4Quantizer",
+    "BlockwiseINT4Quantizer",
+    "PackedINT4Storage",
+    "NF4Codebook",
+    "NF4Quantizer",
+    "DoubleQuantizer",
+    "QLoRALinear",
+    "inject_lora_to_model",
+    "mark_only_lora_as_trainable",
+    "train_lora",
 ]

@@ -3,20 +3,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-from gpt import GPT, BigramLanguageModel
-from tokenization.character import vocab_size
-from tokenization.bpe import BPETokenizer, WordPieceTokenizer
-from tokenization.byte_bpe import ByteBPETokenizer
-from tokenization.regex_bpe import RegexBPETokenizer
-from tokenization.gpt_tokenizer import GPTTokenizer
-from attention.mha import MultiHeadAttention
-from attention.gqa import GroupedQueryAttention
-from attention.mqa import MultiQueryAttention
-from normalization.rms_norm import RMSNorm
-from normalization.layernorm import LayerNorm
-from feedforward.swiglu import SwiGlu
-from feedforward.geglu import GEGLU
-from lora_qlora_scratch import (
+from zahidgpt import (
+    GPT,
+    BigramLanguageModel,
+    BPE,
+    BPETokenizer,
+    WordPieceTokenizer,
+    SentencePieceTokenizer,
+    ByteBPETokenizer,
+    RegexBPETokenizer,
+    GPTTokenizer,
     LoRALinear,
     INT8Quantizer,
     INT8Linear,
@@ -28,7 +24,12 @@ from lora_qlora_scratch import (
     QLoRALinear,
     inject_lora_to_model,
     mark_only_lora_as_trainable,
+    train_lora,
 )
+from zahidgpt.attention.mha import MultiHeadAttention
+from zahidgpt.attention.gqa import GroupedQueryAttention
+from zahidgpt.attention.mqa import MultiQueryAttention
+from zahidgpt.tokenization.character import vocab_size
 
 
 class TestCausalMasking(unittest.TestCase):

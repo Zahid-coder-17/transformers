@@ -2,6 +2,11 @@ import os
 import tempfile
 
 class SentencePieceTokenizer:
+    """
+    SentencePiece Tokenizer (Google SPM style).
+    Uses whitespace meta-character ' ' (U+2581) to preserve exact word boundaries.
+    Integrates native sentencepiece library with pure Python fallback.
+    """
     def __init__(self, vocab_size=256, model_prefix="spm_model"):
         self.vocab_size = vocab_size
         self.model_prefix = model_prefix
@@ -28,8 +33,10 @@ class SentencePieceTokenizer:
             self.sp_processor.load(f"{self.model_prefix}.model")
             return
         except Exception:
+            # Pure Python fallback using ' ' whitespace meta-symbol
             pass
 
+    
         formatted_text = text.replace(" ", " ")
         chars = sorted(list(set(formatted_text)))
         self.vocab = {c: i for i, c in enumerate(chars)}

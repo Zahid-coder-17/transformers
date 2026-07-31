@@ -96,9 +96,11 @@ Configurations supported via the `GPT` model interface:
 ## 💻 Quickstart Code Example
 
 ```python
+# Install zahidgpt package if running in Colab / Kaggle / Jupyter:
+# !pip install zahidgpt
+
 import torch
-from gpt import GPT
-from tokenization.gpt_tokenizer import GPTTokenizer
+from zahidgpt import GPT, GPTTokenizer
 
 # Instantiate GPT Tokenizer
 tokenizer = GPTTokenizer(vocab_size=256)
@@ -129,7 +131,7 @@ print("Output Logits Shape:", logits.shape)
 The `zahidgpt` library provides complete open-source APIs for **Inference**, **Fine-Tuning**, **Custom Tokenization**, and **Hugging Face Hub Integration**.
 
 ```bash
-pip install git+https://github.com/Zahid-coder-17/transformers
+pip install zahidgpt
 ```
 
 ### 1. Zero-Setup Inference

@@ -3,14 +3,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# =====================================================================
-# STEP 1: LoRA (Low-Rank Adaptation)
-# =====================================================================
 class LoRALinear(nn.Module):
-    """
-    Standard LoRA Adapter (Hu et al., 2021).
-    W_final = W_base + (alpha / rank) * (A @ B)
-    """
     def __init__(self, in_dim, out_dim, rank=4, alpha=16, bias=True, dropout=0.0):
         super().__init__()
         self.in_dim = in_dim
@@ -19,13 +12,11 @@ class LoRALinear(nn.Module):
         self.alpha = alpha
         self.scaling = alpha / rank if rank > 0 else 1.0
 
-        # Base Linear Layer (Frozen)
         self.linear = nn.Linear(in_dim, out_dim, bias=bias)
         self.linear.weight.requires_grad = False
         if self.linear.bias is not None:
             self.linear.bias.requires_grad = False
 
-        # Trainable LoRA Parameters
         self.A = nn.Parameter(torch.empty(rank, in_dim))
         self.B = nn.Parameter(torch.zeros(out_dim, rank))
         nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
@@ -38,9 +29,6 @@ class LoRALinear(nn.Module):
         return base_out + (self.scaling * lora_out)
 
 
-# =====================================================================
-# STEP 2: INT8 Quantization (Symmetric / AbsMax)
-# =====================================================================
 class INT8Quantizer:
     @staticmethod
     def quantize(weight_fp32):
@@ -77,9 +65,6 @@ class INT8Linear(nn.Module):
         return F.linear(x, w_dequant, self.bias)
 
 
-# =====================================================================
-# STEP 3: INT4 Quantization (Basic 4-bit [-8, 7])
-# =====================================================================
 class INT4Quantizer:
     @staticmethod
     def quantize(weight_fp32):
@@ -93,9 +78,6 @@ class INT4Quantizer:
         return weight_int4.float() * scale
 
 
-# =====================================================================
-# STEP 4: Block-wise INT4 Quantization
-# =====================================================================
 class BlockwiseINT4Quantizer:
     @staticmethod
     def quantize(weight_fp32, block_size=64):
@@ -120,9 +102,6 @@ class BlockwiseINT4Quantizer:
         return dequant.reshape(shape)
 
 
-# =====================================================================
-# STEP 5: Packed INT4 Storage (2 Nibbles per uint8 Byte)
-# =====================================================================
 class PackedINT4Storage:
     @staticmethod
     def pack(int4_tensor):
@@ -144,9 +123,6 @@ class PackedINT4Storage:
         return interleaved[:original_numel]
 
 
-# =====================================================================
-# STEP 6: NormalFloat4 (NF4) Quantization (Dettmers et al., 2023)
-# =====================================================================
 class NF4Codebook:
     CODEBOOK = torch.tensor([
         -1.0, -0.6961928010010719, -0.5250929007428059, -0.39491749554872527,
@@ -171,11 +147,9 @@ class NF4Quantizer:
         norm_blocks = blocks / scales
         codebook = NF4Codebook.CODEBOOK.to(weight_fp32.device)
 
-        # Find closest NF4 index (0..15)
         dists = torch.abs(norm_blocks.unsqueeze(-1) - codebook)
         indices = torch.argmin(dists, dim=-1).to(torch.uint8)
 
-        # Pack indices (2 per uint8 byte)
         flat_indices = indices.flatten()
         even = flat_indices[0::2] & 0x0F
         odd = flat_indices[1::2] & 0x0F
@@ -202,9 +176,6 @@ class NF4Quantizer:
         return dequant.reshape(shape)
 
 
-# =====================================================================
-# STEP 7: Double Quantization
-# =====================================================================
 class DoubleQuantizer:
     @staticmethod
     def quantize(fp32_scales, block_size_scales=256):
@@ -218,9 +189,6 @@ class DoubleQuantizer:
         return int8_scales.float() * scale_of_scales
 
 
-# =====================================================================
-# STEP 8: Complete QLoRA Layer (NF4 + Double Quant + LoRA)
-# =====================================================================
 class QLoRALinear(nn.Module):
     def __init__(self, in_dim, out_dim, rank=4, alpha=16, block_size=64):
         super().__init__()
@@ -231,14 +199,12 @@ class QLoRALinear(nn.Module):
         self.scaling = alpha / rank if rank > 0 else 1.0
         self.block_size = block_size
 
-        # Buffers for base weight
         self.register_buffer("packed_bytes", torch.zeros(math.ceil((in_dim * out_dim) / 2), dtype=torch.uint8))
         self.register_buffer("int8_scales", torch.zeros(math.ceil((in_dim * out_dim) / block_size), dtype=torch.int8))
         self.register_buffer("scale_of_scales", torch.tensor(1.0))
         self.shape = (out_dim, in_dim)
         self.pad_len = 0
 
-        # Trainable LoRA Adapters
         self.A = nn.Parameter(torch.empty(rank, in_dim))
         self.B = nn.Parameter(torch.zeros(out_dim, rank))
         nn.init.kaiming_uniform_(self.A, a=math.sqrt(5))
@@ -262,9 +228,6 @@ class QLoRALinear(nn.Module):
         return base_out + (self.scaling * lora_out)
 
 
-# =====================================================================
-# MODEL INJECTION & TRAINING HELPERS
-# =====================================================================
 def inject_lora_to_model(model, target_module_names=["c_attn", "q_proj", "v_proj"], rank=4, alpha=16, use_qlora=False):
     for name, child in list(model.named_children()):
         if isinstance(child, nn.Linear) and any(tgt in name for tgt in target_module_names):
@@ -294,7 +257,6 @@ def mark_only_lora_as_trainable(model):
             trainable_params += param.numel()
         else:
             param.requires_grad = False
-    print(f"[LoRA] Trainable Parameters: {trainable_params:,} / {total_params:,} ({100 * trainable_params / total_params:.2f}%)")
     return trainable_params, total_params
 
 
@@ -311,15 +273,7 @@ def train_lora(model, train_dataloader, epochs=3, lr=3e-4, save_adapter_path="lo
             loss.backward()
             optimizer.step()
             total_loss += loss.item()
-        print(f"Epoch {epoch+1}/{epochs} | Loss: {total_loss / max(len(train_dataloader), 1):.4f}")
 
     adapter_state = {k: v for k, v in model.state_dict().items() if "A" in k or "B" in k}
     torch.save(adapter_state, save_adapter_path)
-    print(f"[LoRA] Saved adapter state dict to {save_adapter_path}")
     return adapter_state
-
-
-if __name__ == "__main__":
-    print("=====================================================================")
-    print("ALL 8 STEPS OF QUANTIZATION & QLORA FULLY IMPLEMENTED & TESTED!")
-    print("=====================================================================")

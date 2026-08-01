@@ -57,17 +57,28 @@ zahidgpt.generate(
 ```python
 from zahidgpt import generate
 
-# Generate Python Code
-python_code = generate("def fibonacci(n):", model_type="multicorpus", max_new_tokens=150)
+# 1. Generate Python Code with Low Temperature (Deterministic & Precise)
+python_code = generate(
+    prompt="def fibonacci(n):",
+    model_type="multicorpus",
+    max_new_tokens=200,   # Generate 200 new tokens
+    temperature=0.2,      # Low temperature for precise code logic
+    top_k=40,             # Top-40 sampling
+    top_p=0.9,            # Top-P nucleus sampling
+    device="cuda"         # Run on GPU
+)
 print(python_code)
 
-# Generate English Text
-english_story = generate("Once upon a time", model_type="multicorpus", max_new_tokens=120)
-print(english_story)
-
-# Generate Arabic Text
-arabic_text = generate("مرحبا بك في", model_type="multicorpus", max_new_tokens=100)
-print(arabic_text)
+# 2. Generate English Story with Higher Temperature (Creative)
+story = generate(
+    prompt="Once upon a time",
+    model_type="multicorpus",
+    max_new_tokens=150,
+    temperature=0.85,     # Higher temperature for creative storytelling
+    top_k=50,
+    top_p=0.95
+)
+print(story)
 ```
 
 ---

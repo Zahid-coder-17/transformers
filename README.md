@@ -134,14 +134,24 @@ The `zahidgpt` library provides complete open-source APIs for **Inference**, **F
 pip install zahidgpt
 ```
 
-### 1. Zero-Setup Inference
+### 1. Zero-Setup Inference & Sampling Control
 ```python
 from zahidgpt import generate
 
-# Generates text using 17.45M parameter pre-trained weights (auto-downloaded from HF Hub)
+# Simple Generation
 print(generate("def fibonacci(", model_type="multicorpus"))
-print(generate("Once upon a time", model_type="multicorpus"))
-print(generate("مرحبا بك", model_type="multicorpus"))
+
+# Custom Generation with Temperature, Max Tokens, Top-K & Top-P Sampling
+output = generate(
+    prompt="def calculate_matrix_product(a, b):",
+    model_type="multicorpus",
+    max_new_tokens=300,  # Number of new tokens to generate
+    temperature=0.7,     # Sampling randomness (0.2 = deterministic code, 0.9 = creative)
+    top_k=40,            # Top-K candidate filtering
+    top_p=0.9,           # Top-P nucleus sampling threshold
+    device="cuda"        # Target device ('cuda' or 'cpu')
+)
+print(output)
 ```
 
 ### 2. Fine-Tune on Your Custom Text Dataset
